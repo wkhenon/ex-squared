@@ -1,6 +1,6 @@
 {
 	"name": "ex-squared",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Summarizes selected expenses by card and payment source in an Excel workbook",
 	"main": "main.js",
 	"type": "module",
@@ -25,6 +25,6 @@
 		"typescript-eslint": "^8.47.0"
 	},
 	"dependencies": {
-		"exceljs": "^4.4.0"
+		"fflate": "^0.8.3"
 	}
 }

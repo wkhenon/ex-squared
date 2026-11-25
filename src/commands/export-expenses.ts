@@ -1,6 +1,6 @@
-import ExcelJS from 'exceljs';
 import { Editor, Notice, Plugin, TFile, TFolder } from 'obsidian';
 import { parseExpenses } from '../expense-parser';
+import { CardSummary, createExpenseSummaryWorkbook } from '../workbook/xlsx-writer';
 
 const EXPORT_FOLDER = 'Exports';
 
@@ -55,68 +55,9 @@ async function exportSelectedExpenses(plugin: Plugin, editor: Editor): Promise<v
 		await ensureExportFolder(plugin);
 		const dateStamp = formatDateStamp(new Date());
 		const summaries = aggregateExpenses(expenses);
-		const workbook = new ExcelJS.Workbook();
-		workbook.creator = 'Ex Squared';
-		workbook.subject = 'Expense summary by card and payment source';
-		const worksheet = workbook.addWorksheet('Summary', {
-			views: [{ state: 'frozen', ySplit: 2, showGridLines: false }],
-		});
-		worksheet.columns = [
-			{ header: 'Card / payment source', key: 'label', width: 30 },
-			{ header: 'Amount', key: 'amount', width: 15 },
-		];
-		worksheet.mergeCells('A1:B1');
-		const title = worksheet.getCell('A1');
-		title.value = 'Expense summary';
-		title.font = { name: 'Aptos', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-		title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF202020' } };
-		title.alignment = { horizontal: 'center', vertical: 'middle' };
-		title.border = cellBorder();
-		worksheet.getRow(1).height = 22;
-
-		const header = worksheet.getRow(2);
-		header.values = ['Card / payment source', 'Amount'];
-		header.height = 20;
-		for (const cell of [header.getCell(1), header.getCell(2)]) {
-			cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-			cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF303030' } };
-			cell.border = cellBorder();
-		}
-		worksheet.getColumn(2).numFmt = '$#,##0.00;[Red]-$#,##0.00';
-
-		for (const card of summaries) {
-			const cardRow = worksheet.addRow([`#${card.card}`, card.totalCents / 100]);
-			cardRow.height = 20;
-			cardRow.getCell(1).fill = {
-				type: 'pattern',
-				pattern: 'solid',
-				fgColor: { argb: 'FF888888' },
-			};
-			cardRow.getCell(2).fill = {
-				type: 'pattern',
-				pattern: 'solid',
-				fgColor: { argb: 'FF193A64' },
-			};
-			cardRow.getCell(2).alignment = { horizontal: 'right' };
-			for (const cell of [cardRow.getCell(1), cardRow.getCell(2)]) {
-				cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-				cell.border = cellBorder();
-			}
-
-			for (const source of card.sources) {
-				const sourceRow = worksheet.addRow([`#${source.paymentSource}`, source.totalCents / 100]);
-				sourceRow.getCell(1).alignment = { vertical: 'middle' };
-				sourceRow.getCell(2).alignment = { horizontal: 'right', vertical: 'middle' };
-				for (const cell of [sourceRow.getCell(1), sourceRow.getCell(2)]) {
-					cell.font = { color: { argb: 'FF000000' } };
-					cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
-					cell.border = cellBorder();
-				}
-			}
-		}
 
 		const fileName = await uniqueExportPath(plugin, note, dateStamp);
-		const data = await workbook.xlsx.writeBuffer() as ArrayBuffer;
+		const data = createExpenseSummaryWorkbook(summaries);
 		const exportedFile = await plugin.app.vault.createBinary(fileName, data);
 		const noteLink = plugin.app.fileManager.generateMarkdownLink(
 			exportedFile,
@@ -133,7 +74,7 @@ async function exportSelectedExpenses(plugin: Plugin, editor: Editor): Promise<v
 	}
 }
 
-function aggregateExpenses(expenses: ReturnType<typeof parseExpenses>) {
+function aggregateExpenses(expenses: ReturnType<typeof parseExpenses>): CardSummary[] {
 	const cards = new Map<string, Map<string, number>>();
 	for (const expense of expenses) {
 		let sources = cards.get(expense.card);
@@ -183,9 +124,4 @@ function formatDateStamp(date: Date): string {
 	const month = String(date.getMonth() + 1).padStart(2, '0');
 	const day = String(date.getDate()).padStart(2, '0');
 	return `${year}-${month}-${day}`;
-}
-
-function cellBorder() {
-	const edge = { style: 'thin' as const, color: { argb: 'FF000000' } };
-	return { top: edge, right: edge, bottom: edge, left: edge };
 }

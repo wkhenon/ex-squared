@@ -1,8 +1,8 @@
 {
 	"id": "ex-squared",
 	"name": "Ex Squared",
-	"version": "1.0.0",
-	"minAppVersion": "1.1.0",
+	"version": "1.0.1",
+	"minAppVersion": "1.4.0",
 	"description": "Summarizes selected expenses by card and payment source in an Excel workbook.",
 	"author": "wkhenon",
 	"isDesktopOnly": false
