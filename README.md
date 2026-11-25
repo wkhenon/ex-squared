@@ -22,7 +22,7 @@ The plugin processes notes locally and does not transmit note contents.
 
 ## License
 
-Ex Squared is licensed under GPL-3.0-only. The production bundle includes ExcelJS, which is licensed under MIT; its license notice is included in the generated `main.js` file.
+Ex Squared is licensed under GPL-3.0-only. The production bundle includes fflate, which is licensed under MIT; its license notice is included in the generated `main.js` file.
 
 ## Development
 
